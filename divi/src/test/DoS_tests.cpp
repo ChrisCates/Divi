@@ -117,13 +117,17 @@ CTransaction RandomOrphan()
     return it->second.tx;
 }
 
-BOOST_AUTO_TEST_CASE(DoS_mapOrphans,SKIP_TEST)
+BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
 {
+    ECCVerifyHandle verificationModule;
+    ECC_Start();
     CKey key;
+    
     key.MakeNewKey(true);
     CBasicKeyStore keystore;
     keystore.AddKey(key);
-
+ 
+    std::cout << "Check 1" << std::endl;
     // 50 orphan transactions:
     for (int i = 0; i < 50; i++)
     {
@@ -139,6 +143,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans,SKIP_TEST)
         AddOrphanTx(tx, i);
     }
 
+    std::cout << "Check 2" << std::endl;
     // ... and 50 that depend on other orphans:
     for (int i = 0; i < 50; i++)
     {
@@ -151,11 +156,13 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans,SKIP_TEST)
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
         tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
+        std::cout << "Before SignSig" << std::endl;
+        std::cout << "Script to be used: " << tx.vout[0].scriptPubKey.ToString() << std::endl;
         SignSignature(keystore, txPrev, tx, 0);
-
+        std::cout << "Before Add Orphan" << std::endl;
         AddOrphanTx(tx, i);
     }
-
+    std::cout << "Check 3" << std::endl;
     // This really-big orphan should be ignored:
     for (int i = 0; i < 10; i++)
     {
@@ -179,7 +186,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans,SKIP_TEST)
 
         BOOST_CHECK(!AddOrphanTx(tx, i));
     }
-
+    std::cout << "Chech 4" << std::endl;
     // Test EraseOrphansFor:
     for (NodeId i = 0; i < 3; i++)
     {
@@ -187,7 +194,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans,SKIP_TEST)
         EraseOrphansFor(i);
         BOOST_CHECK(mapOrphanTransactions.size() < sizeBefore);
     }
-
+    std::cout << "Final check" << std::endl;
     // Test LimitOrphanTxSize() function:
     LimitOrphanTxSize(40);
     BOOST_CHECK(mapOrphanTransactions.size() <= 40);
@@ -196,6 +203,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans,SKIP_TEST)
     LimitOrphanTxSize(0);
     BOOST_CHECK(mapOrphanTransactions.empty());
     BOOST_CHECK(mapOrphanTransactionsByPrev.empty());
+    ECC_Stop();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

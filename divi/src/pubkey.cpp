@@ -7,6 +7,7 @@
 #include <secp256k1.h>
 #include <secp256k1_recovery.h>
 
+#include <iostream>
 namespace
 {
 /* Global secp256k1_context object used for verification. */
@@ -169,18 +170,24 @@ bool CPubKey::Verify(const uint256 &hash, const std::vector<unsigned char>& vchS
         return false;
     secp256k1_pubkey pubkey;
     secp256k1_ecdsa_signature sig;
+    std::cout << "Pubkey::Verify - hell level: " << 0 << std::endl;
+    std::cout << "Contex verifier is false: " << (secp256k1_context_verify==NULL) << std::endl;
     if (!secp256k1_ec_pubkey_parse(secp256k1_context_verify, &pubkey, &(*this)[0], size())) {
         return false;
     }
+    std::cout << "Pubkey::Verify - hell level: " << 1 << std::endl;
     if (vchSig.size() == 0) {
         return false;
     }
+    std::cout << "Pubkey::Verify - hell level: " << 2 << std::endl;
     if (!ecdsa_signature_parse_der_lax(secp256k1_context_verify, &sig, &vchSig[0], vchSig.size())) {
         return false;
     }
+    std::cout << "Pubkey::Verify - hell level: " << 3 << std::endl;
     /* libsecp256k1's ECDSA verification requires lower-S signatures, which have
      * not historically been enforced in Bitcoin, so normalize them first. */
     secp256k1_ecdsa_signature_normalize(secp256k1_context_verify, &sig, &sig);
+    std::cout << "Pubkey::Verify - hell level: " << 4 << std::endl;
     return secp256k1_ecdsa_verify(secp256k1_context_verify, &sig, hash.begin(), &pubkey);
 }
 
