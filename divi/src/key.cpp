@@ -15,9 +15,6 @@
 #include <secp256k1.h>
 #include <secp256k1_recovery.h>
 
-#include "util.h"
-#include <stdio.h>
-
 static secp256k1_context* secp256k1_context_sign = NULL;
 
 /** These functions are taken from the libsecp256k1 distribution and are very ugly. */
@@ -158,23 +155,15 @@ CPrivKey CKey::GetPrivKey() const {
 }
 
 CPubKey CKey::GetPubKey() const {
-    std::cout << "GetPubKey(): 1" << std::endl;
     assert(fValid);
     secp256k1_pubkey pubkey;
     size_t clen = 65;
     CPubKey result;
-    std::cout << "GetPubKey(): 2" << std::endl;
-    std::cout << "NULL STATUS: " << (secp256k1_context_sign==NULL)<< " | " << (&pubkey == NULL) << std::endl;
     int ret = secp256k1_ec_pubkey_create(secp256k1_context_sign, &pubkey, begin());
-    std::cout << "GetPubKey(): 3" << std::endl;
     assert(ret);
-    std::cout << "GetPubKey(): 4" << std::endl;
     secp256k1_ec_pubkey_serialize(secp256k1_context_sign, (unsigned char*)result.begin(), &clen, &pubkey, fCompressed ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
-    std::cout << "GetPubKey(): 5" << std::endl;
     assert(result.size() == clen);
-    std::cout << "GetPubKey(): 6" << std::endl;
     assert(result.IsValid());
-    std::cout << "GetPubKey(): 7" << std::endl;
     return result;
 }
 

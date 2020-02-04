@@ -14,8 +14,6 @@
 
 #include <boost/foreach.hpp>
 
-#include <stdio.h>
-
 using namespace std;
 
 typedef vector<unsigned char> valtype;
@@ -113,20 +111,17 @@ bool Solver(const CKeyStore& keystore, const CScript& scriptPubKey, uint256 hash
 
 bool SignSignature(const CKeyStore &keystore, const CScript& fromPubKey, CMutableTransaction& txTo, unsigned int nIn, int nHashType)
 {
-    std::cout << "SignSignature - second level: 1" << std::endl;
     assert(nIn < txTo.vin.size());
     CTxIn& txin = txTo.vin[nIn];
 
     // Leave out the signature from the hash, since a signature can't sign itself.
     // The checksig op will also drop the signatures from its hash.
-    std::cout << "SignSignature - second level: 2" << std::endl;
     uint256 hash = SignatureHash(fromPubKey, txTo, nIn, nHashType);
-    std::cout << "SignSignature - second level: 3" << std::endl;
+
     txnouttype whichType;
     if (!Solver(keystore, fromPubKey, hash, nHashType, txin.scriptSig, whichType))
         return false;
 
-    std::cout << "SignSignature - second level: 4" << std::endl;
     if (whichType == TX_SCRIPTHASH)
     {
         // Solver returns the subscript that need to be evaluated;
@@ -144,19 +139,18 @@ bool SignSignature(const CKeyStore &keystore, const CScript& fromPubKey, CMutabl
         txin.scriptSig << static_cast<valtype>(subscript);
         if (!fSolved) return false;
     }
-    std::cout << "SignSignature - second level: 5" << std::endl;
+
     // Test solution
     return VerifyScript(txin.scriptSig, fromPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&txTo, nIn));
 }
 
 bool SignSignature(const CKeyStore &keystore, const CTransaction& txFrom, CMutableTransaction& txTo, unsigned int nIn, int nHashType)
 {
-    std::cout << "SignSignature - top level: 1" << std::endl;
     assert(nIn < txTo.vin.size());
     CTxIn& txin = txTo.vin[nIn];
     assert(txin.prevout.n < txFrom.vout.size());
     const CTxOut& txout = txFrom.vout[txin.prevout.n];
-    std::cout << "SignSignature - top level: 2" << std::endl;
+
     return SignSignature(keystore, txout.scriptPubKey, txTo, nIn, nHashType);
 }
 

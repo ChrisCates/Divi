@@ -13,7 +13,6 @@
 #include "pubkey.h"
 #include "script/script.h"
 #include "uint256.h"
-#include <iostream>
 
 using namespace std;
 
@@ -238,7 +237,6 @@ bool static CheckMinimalPush(const valtype& data, opcodetype opcode) {
 
 bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* serror)
 {
-    std::cout << "EvalScript - top level: 0" << std::endl;
     static const CScriptNum bnZero(0);
     static const CScriptNum bnOne(1);
     static const CScriptNum bnFalse(0);
@@ -247,7 +245,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
     static const valtype vchZero(0);
     static const valtype vchTrue(1, 1);
 
-    std::cout << "EvalScript - top level: 1" << std::endl;
     CScript::const_iterator pc = script.begin();
     CScript::const_iterator pend = script.end();
     CScript::const_iterator pbegincodehash = script.begin();
@@ -256,36 +253,29 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
     vector<bool> vfExec;
     vector<valtype> altstack;
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
-    std::cout << "EvalScript - top level: 2" << std::endl;
     if (script.size() > 10000)
         return set_error(serror, SCRIPT_ERR_SCRIPT_SIZE);
     int nOpCount = 0;
     bool fRequireMinimal = (flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
-    std::cout << "EvalScript - top level: 3" << std::endl;
 
     try
     {
-        std::cout << "EvalScript - bottom level: 4.0" << std::endl;
         while (pc < pend)
         {
-            std::cout << "EvalScript - bottom level: 4.1" << std::endl;
             bool fExec = !count(vfExec.begin(), vfExec.end(), false);
 
             //
             // Read instruction
             //
-            std::cout << "EvalScript - bottom level: 4.2" << std::endl;
             if (!script.GetOp(pc, opcode, vchPushValue))
                 return set_error(serror, SCRIPT_ERR_BAD_OPCODE);
             if (vchPushValue.size() > MAX_SCRIPT_ELEMENT_SIZE)
                 return set_error(serror, SCRIPT_ERR_PUSH_SIZE);
 
-            std::cout << "EvalScript - bottom level: 4.3" << std::endl;
             // Note how OP_RESERVED does not count towards the opcode limit.
             if (opcode > OP_16 && ++nOpCount > 201)
                 return set_error(serror, SCRIPT_ERR_OP_COUNT);
 
-            std::cout << "EvalScript - bottom level: 4.4" << std::endl;
             if (opcode == OP_CAT ||
                 opcode == OP_SUBSTR ||
                 opcode == OP_LEFT ||
@@ -303,16 +293,11 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 opcode == OP_RSHIFT)
                 return set_error(serror, SCRIPT_ERR_DISABLED_OPCODE); // Disabled opcodes.
 
-            std::cout << "EvalScript - bottom level: 4.5" << std::endl;
-            std::cout << "Data: " << fExec << " || " << (unsigned)opcode << std::endl;
-            std::cout << "EvalScript - bottom level: 4.51" << std::endl;
             if (fExec && 0 <= opcode && opcode <= OP_PUSHDATA4) {
-                std::cout << "EvalScript - bottom level: 4.6" << std::endl;
                 if (fRequireMinimal && !CheckMinimalPush(vchPushValue, opcode)) {
                     return set_error(serror, SCRIPT_ERR_MINIMALDATA);
                 }
                 stack.push_back(vchPushValue);
-                std::cout << "EvalScript - bottom level: 4.7" << std::endl;
             } else if (fExec || (OP_IF <= opcode && opcode <= OP_ENDIF))
             switch (opcode)
             {
@@ -338,7 +323,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case OP_16:
                 {
                     // ( -- value)
-                    std::cout << "EvalScript - hell level: " << 0 << std::endl;
                     CScriptNum bn((int)opcode - (int)(OP_1 - 1));
                     stack.push_back(bn.getvch());
                     // The result of these opcodes should always be the minimal way to push the data
@@ -356,7 +340,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case OP_NOP1: case OP_NOP2: case OP_NOP3: case OP_NOP4: case OP_NOP5:
                 case OP_NOP6: case OP_NOP7: case OP_NOP8: case OP_NOP9: case OP_NOP10:
                 {
-                     std::cout << "EvalScript - hell level: " << 1 << std::endl;
                     if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS)
                         return set_error(serror, SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS);
                 }
@@ -366,7 +349,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case OP_NOTIF:
                 {
                     // <expression> if [statements] [else [statements]] endif
-                     std::cout << "EvalScript - hell level: " << 2 << std::endl;
                     bool fValue = false;
                     if (fExec)
                     {
@@ -384,7 +366,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_ELSE:
                 {
-                     std::cout << "EvalScript - hell level: " << 2 << std::endl;
                     if (vfExec.empty())
                         return set_error(serror, SCRIPT_ERR_UNBALANCED_CONDITIONAL);
                     vfExec.back() = !vfExec.back();
@@ -393,7 +374,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_ENDIF:
                 {
-                    std::cout << "EvalScript - hell level: " << 3 << std::endl;
                     if (vfExec.empty())
                         return set_error(serror, SCRIPT_ERR_UNBALANCED_CONDITIONAL);
                     vfExec.pop_back();
@@ -402,7 +382,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_VERIFY:
                 {
-                    std::cout << "EvalScript - hell level: " << 4 << std::endl;
                     // (true -- ) or
                     // (false -- false) and return
                     if (stack.size() < 1)
@@ -417,7 +396,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_META:
                 {
-                    std::cout << "EvalScript - hell level: " << 5 << std::endl;
                     return set_error(serror, SCRIPT_ERR_OP_META);
                 }
                 break;
@@ -428,7 +406,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 //
                 case OP_TOALTSTACK:
                 {
-                    std::cout << "EvalScript - hell level: " << 6 << std::endl;
                     if (stack.size() < 1)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
                     altstack.push_back(stacktop(-1));
@@ -438,7 +415,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_FROMALTSTACK:
                 {
-                    std::cout << "EvalScript - hell level: " << 7 << std::endl;
                     if (altstack.size() < 1)
                         return set_error(serror, SCRIPT_ERR_INVALID_ALTSTACK_OPERATION);
                     stack.push_back(altstacktop(-1));
@@ -448,7 +424,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_2DROP:
                 {
-                    std::cout << "EvalScript - hell level: " << 8 << std::endl;
                     // (x1 x2 -- )
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -459,7 +434,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_2DUP:
                 {
-                    std::cout << "EvalScript - hell level: " << 9 << std::endl;
                     // (x1 x2 -- x1 x2 x1 x2)
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -472,7 +446,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_3DUP:
                 {
-                    std::cout << "EvalScript - hell level: " << 10 << std::endl;
                     // (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
                     if (stack.size() < 3)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -487,7 +460,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_2OVER:
                 {
-                    std::cout << "EvalScript - hell level: " << 11 << std::endl;
                     // (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
                     if (stack.size() < 4)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -500,7 +472,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_2ROT:
                 {
-                    std::cout << "EvalScript - hell level: " << 12 << std::endl;
                     // (x1 x2 x3 x4 x5 x6 -- x3 x4 x5 x6 x1 x2)
                     if (stack.size() < 6)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -514,7 +485,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_2SWAP:
                 {
-                    std::cout << "EvalScript - hell level: " << 13 << std::endl;
                     // (x1 x2 x3 x4 -- x3 x4 x1 x2)
                     if (stack.size() < 4)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -525,7 +495,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_IFDUP:
                 {
-                    std::cout << "EvalScript - hell level: " << 14 << std::endl;
                     // (x - 0 | x x)
                     if (stack.size() < 1)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -537,7 +506,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_DEPTH:
                 {
-                    std::cout << "EvalScript - hell level: " << 15 << std::endl;
                     // -- stacksize
                     CScriptNum bn(stack.size());
                     stack.push_back(bn.getvch());
@@ -546,7 +514,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case OP_DROP:
                 {
-                    std::cout << "EvalScript - hell level: " << 16 << std::endl;
                     // (x -- )
                     if (stack.size() < 1)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -818,33 +785,28 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case OP_CHECKSIG:
                 case OP_CHECKSIGVERIFY:
                 {
-                    std::cout << "EvalScript - hell level: " << 16 << std::endl;
                     // (sig pubkey -- bool)
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
 
-                    std::cout << "EvalScript - hell level: " << 17 << std::endl;
                     valtype& vchSig    = stacktop(-2);
                     valtype& vchPubKey = stacktop(-1);
-                    std::cout << "EvalScript - hell level: " << 18 << std::endl;
+
                     // Subset of script starting at the most recent codeseparator
                     CScript scriptCode(pbegincodehash, pend);
-                    std::cout << "EvalScript - hell level: " << 19 << std::endl;
+
                     // Drop the signature, since there's no way for a signature to sign itself
                     scriptCode.FindAndDelete(CScript(vchSig));
-                    std::cout << "EvalScript - hell level: " << 20 << std::endl;
+
                     if (!CheckSignatureEncoding(vchSig, flags, serror) || !CheckPubKeyEncoding(vchPubKey, flags, serror)) {
                         //serror is set
                         return false;
                     }
-                    std::cout << "EvalScript - hell level: " << 21 << std::endl;
                     bool fSuccess = checker.CheckSig(vchSig, vchPubKey, scriptCode);
-                    std::cout << "EvalScript - hell level: " << 22 << std::endl;
+
                     popstack(stack);
                     popstack(stack);
-                    std::cout << "EvalScript - hell level: " << 23 << std::endl;
                     stack.push_back(fSuccess ? vchTrue : vchFalse);
-                    std::cout << "EvalScript - hell level: " << 24 << std::endl;
                     if (opcode == OP_CHECKSIGVERIFY)
                     {
                         if (fSuccess)
@@ -852,7 +814,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         else
                             return set_error(serror, SCRIPT_ERR_CHECKSIGVERIFY);
                     }
-                    std::cout << "EvalScript - hell level: " << 25 << std::endl;
                 }
                 break;
 
@@ -956,24 +917,20 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 default:
                     return set_error(serror, SCRIPT_ERR_BAD_OPCODE);
             }
-            std::cout << "EvalScript - bottom level: 4.8" << std::endl;
+
             // Size limits
             if (stack.size() + altstack.size() > 1000)
                 return set_error(serror, SCRIPT_ERR_STACK_SIZE);
         }
-        std::cout << "EvalScript - bottom level: 4.9" << std::endl;
     }
     catch (...)
     {
-        std::cout << "EvalScript - bottom level: 4.99" << std::endl;
         return set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
     }
 
-    std::cout << "EvalScript - top level: 5" << std::endl;
     if (!vfExec.empty())
         return set_error(serror, SCRIPT_ERR_UNBALANCED_CONDITIONAL);
 
-    std::cout << "EvalScript - top level: 6" << std::endl;
     return set_success(serror);
 }
 
@@ -1107,12 +1064,10 @@ bool TransactionSignatureChecker::VerifySignature(const std::vector<unsigned cha
 
 bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn, const vector<unsigned char>& vchPubKey, const CScript& scriptCode) const
 {
-    std::cout << "TransactionSignatureChecker - hell level: " << 0 << std::endl;
     CPubKey pubkey(vchPubKey);
     if (!pubkey.IsValid())
         return false;
 
-    std::cout << "TransactionSignatureChecker - hell level: " << 1 << std::endl;
     // Hash type is one byte tacked on to the end of the signature
     vector<unsigned char> vchSig(vchSigIn);
     if (vchSig.empty())
@@ -1120,49 +1075,37 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
     int nHashType = vchSig.back();
     vchSig.pop_back();
 
-    std::cout << "TransactionSignatureChecker - hell level: " << 2 << std::endl;
     uint256 sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType);
 
-    std::cout << "TransactionSignatureChecker - hell level: " << 3 << std::endl;
     if (!VerifySignature(vchSig, pubkey, sighash))
         return false;
 
-    std::cout << "TransactionSignatureChecker - hell level: " << 4 << std::endl;
     return true;
 }
 
 bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* serror)
 {
-    std::cout << "VerifyScript - second level: 1" << std::endl;
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
-    std::cout << "VerifyScript - second level: 2" << std::endl;
+
     if ((flags & SCRIPT_VERIFY_SIGPUSHONLY) != 0 && !scriptSig.IsPushOnly()) {
         return set_error(serror, SCRIPT_ERR_SIG_PUSHONLY);
     }
-    std::cout << "VerifyScript - second level: 3" << std::endl;
+
     vector<vector<unsigned char> > stack, stackCopy;
     if (!EvalScript(stack, scriptSig, flags, checker, serror))
         // serror is set
         return false;
-    
-    std::cout << "VerifyScript - second level: 3.0" << std::endl;
     if (flags & SCRIPT_VERIFY_P2SH)
         stackCopy = stack;
-
-    std::cout << "VerifyScript - second level: 3.1" << std::endl;
     if (!EvalScript(stack, scriptPubKey, flags, checker, serror))
         // serror is set
         return false;
-    
-    std::cout << "VerifyScript - second level: 3.2" << std::endl;
     if (stack.empty())
         return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
 
-    std::cout << "VerifyScript - second level: 3.3" << std::endl;
     if (CastToBool(stack.back()) == false)
         return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
 
-    std::cout << "VerifyScript - second level: 4" << std::endl;
     // Additional validation for spend-to-script-hash transactions:
     if ((flags & SCRIPT_VERIFY_P2SH) && scriptPubKey.IsPayToScriptHash())
     {
@@ -1189,6 +1132,6 @@ bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigne
         else
             return set_success(serror);
     }
-    std::cout << "VerifyScript - second level: 5" << std::endl;
+
     return set_success(serror);
 }
